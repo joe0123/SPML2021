@@ -9,8 +9,11 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from pytorchcv.model_provider import get_model
+from PIL import Image
 
 from dataset import CIFAR100
+
+os.environ["CUDA_VISIBLE_DEVICES"] = '2'
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -37,7 +40,8 @@ if __name__ == "__main__":
                                 "resnet164bn_cifar100", "densenet100_k24_cifar100"])
     parser.add_argument("--epsilon", type=float, default=8)
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--max_iter", type=int, default=100)
+    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--max_iter", type=int, default=1000)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--seed", type=int, default=14)
     args = parser.parse_args()
@@ -57,35 +61,38 @@ if __name__ == "__main__":
         model = get_model(model_name, pretrained=True).to(args.device)
         model.eval()
         models.append(model)
-
-    lrs = args.epsilon / (255 * torch.Tensor(dataloader.dataset.std)) / args.max_iter
-    all_modifiers = []
-    correct = 0
-    for images, labels, names in dataloader:
-        modifiers = [torch.zeros_like(images[:, ci, :, :], requires_grad=True, device=args.device) 
-                    for ci in range(3)]
-        optimizer = Adam([{"params": m, "lr": lr} for m, lr in zip(modifiers, lrs)])
+    
+    means = torch.Tensor(dataloader.dataset.mean).reshape(1, 3, 1, 1).to(args.device)
+    stds = torch.Tensor(dataloader.dataset.std).reshape(1, 3, 1, 1).to(args.device)
+    epsilons = args.epsilon / (255 * stds)
+    for images, labels, ori_images, names in dataloader:
+        modifiers = torch.zeros_like(images, requires_grad=True, device=args.device)
+        optimizer = Adam([modifiers], lr=args.lr)
         images = images.to(args.device)
-        labels = labels.to(args.device)
         labels_oh = F.one_hot(labels, num_classes=100).to(args.device)
         
         for it in range(args.max_iter):
-            modified_images = images.clone()
-            for ci in range(3):
-                modified_images[:, ci, :, :] += modifiers[ci]
-            preds = model(modified_images)
-            losses = -torch.log(1 - labels_oh * preds.softmax(-1)).sum(-1)
+            adv_images = images + modifiers.clamp(-epsilons, epsilons)
+            preds = torch.zeros_like(labels_oh).float()
+            for model in models:
+                preds += model(adv_images).softmax(-1)
+            preds = preds / len(models)
+            #preds = model(adv_images).softmax(-1)
+            losses = -torch.log(1 - labels_oh * preds).sum(-1)
 
             optimizer.zero_grad()
             losses.backward(torch.ones_like(losses), retain_graph=True)
             optimizer.step()
-        #print(modifiers[0].max())
-        #print(modifiers[1].max())
-        #print(modifiers[2].max())
         
-        modified_images = images.clone()
-        for ci in range(3):
-            modified_images[:, ci, :, :] += modifiers[ci]
-        preds = model(modified_images)
-        correct += (preds.argmax(-1) == labels).sum().item()
-    print(correct / len(dataloader.dataset))
+        adv_images = images + modifiers.clamp(-epsilons, epsilons)
+        for model in models:
+            print((model(adv_images).argmax(-1).cpu() == labels).float().mean())
+        print('')
+        
+        ori_images = ori_images.numpy()
+        noises = (modifiers.detach() * stds * 255).clamp(-args.epsilon, args.epsilon)
+        noises = noises.cpu().numpy().transpose((0, 2, 3, 1)) # (b, C, H, W) -> (b, H, W, C)
+        adv_images = np.floor(ori_images + noises).clip(0, 255)     
+        for adv_image, name in zip(adv_images, names):
+            im = Image.fromarray(adv_image.astype(np.uint8))
+            im.save(os.path.join(args.out_dir, name))
