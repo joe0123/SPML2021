@@ -34,13 +34,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, default="../data/cifar-100_eval")
     parser.add_argument("--out_dir", type=str, default="./adv_images")
-    parser.add_argument("--algor", type=str, required=True, choices=["fgsm", "pgd", "opt"])
+    parser.add_argument("--algor", type=str, required=True, choices=["fgsm", "ifgsm", "pgd", "opt"])
     parser.add_argument("--model_names", nargs='+',
-                        default=["resnet110_cifar100", "resnet164bn_cifar100"])
+                        default=["resnet1001_cifar100"])
     parser.add_argument("--epsilon", type=float, default=8)
-    parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--lr", type=float, default=1e-1)
-    parser.add_argument("--max_iter", type=int, default=100)
+    parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--seed", type=int, default=14)
     args = parser.parse_args()
@@ -58,6 +56,7 @@ if __name__ == "__main__":
     ensemble_model = Ensemble(args).to(args.device)
     ensemble_model.eval()
     
+    logger.info("Generating adversarial images...")
     means = torch.Tensor(dataloader.dataset.mean).reshape(1, 3, 1, 1).to(args.device)
     stds = torch.Tensor(dataloader.dataset.std).reshape(1, 3, 1, 1).to(args.device)
     epsilons = args.epsilon / (255 * stds)
@@ -65,21 +64,21 @@ if __name__ == "__main__":
         images = images.to(args.device)
         labels = labels.to(args.device)
         if args.algor == "fgsm":
+            modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), epsilons, max_iter=1)
+        elif args.algor == "ifgsm":
             modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), epsilons)
         elif args.algor == "pgd":
-            modifiers = PGD(ensemble_model, images, labels, nn.CrossEntropyLoss(), 
-                            args.lr, args.max_iter, epsilons)
+            modifiers = PGD(ensemble_model, images, labels, nn.CrossEntropyLoss(), epsilons)
         elif args.algor == "opt":
-            modifiers = Optimization(ensemble_model, images, labels, \
-                                    args.lr, args.max_iter, epsilons)
+            modifiers = Optimization(ensemble_model, images, labels, epsilons)
         else:
             raise NotImplementedError
         
-        adv_images = images + modifiers
-        preds = ensemble_model(adv_images, reduction="none")
-        for i in range(preds.shape[0]):
-            print((preds[i].argmax(-1) == labels).float().mean())
-        print('')
+        #adv_images = images + modifiers
+        #preds = ensemble_model(adv_images, reduction="none")
+        #for i in range(preds.shape[0]):
+        #    print((preds[i].argmax(-1) == labels).float().mean())
+        #print('')
         
         ori_images = ori_images.numpy()
         noises = (modifiers.detach() * stds * 255).clamp(-args.epsilon, args.epsilon)

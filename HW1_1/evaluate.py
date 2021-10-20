@@ -54,9 +54,24 @@ if __name__ == "__main__":
     parser.add_argument("--adv_dir", type=str, default="./adv_images")
     parser.add_argument("--model_names", nargs='+',
                         default=["resnet20_cifar100", "resnet56_cifar100", 
-                                "resnet110_cifar100", "resnet164bn_cifar100"])
+                                "resnet110_cifar100", "resnet164bn_cifar100", 
+                                "resnet272bn_cifar100", "resnet1001_cifar100",
+                                "preresnet20_cifar100", "preresnet56_cifar100", 
+                                "preresnet110_cifar100", "preresnet164bn_cifar100", 
+                                "preresnet272bn_cifar100", "preresnet1001_cifar100",
+                                "seresnet20_cifar100", "seresnet56_cifar100",
+                                "seresnet110_cifar100", "seresnet164bn_cifar100",
+                                "seresnet272bn_cifar100",
+                                "densenet40_k12_cifar100", "densenet40_k12_bc_cifar100",
+                                "densenet100_k12_cifar100", "densenet100_k24_cifar100",
+                                "densenet250_k24_bc_cifar100",
+                                "pyramidnet110_a48_cifar100", "pyramidnet110_a84_cifar100",
+                                "pyramidnet236_a220_bn_cifar100", "pyramidnet272_a200_bn_cifar100",
+                                "wrn28_10_cifar100", "wrn40_8_cifar100",
+                                "nin_cifar100",
+                                ])
     parser.add_argument("--epsilon", type=int, default=8)
-    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--device", type=str, default="cuda:0")
     args = parser.parse_args()
 
@@ -70,7 +85,7 @@ if __name__ == "__main__":
 
     logger.info("Validating data with epsilon {}...".format(args.epsilon))
     validate(ori_dataset, adv_dataset, args.epsilon)
-    
+
     for model_name in args.model_names:
         logger.info("Loading proxy model {}...".format(model_name))
         model = get_model(model_name, pretrained=True).to(args.device)
