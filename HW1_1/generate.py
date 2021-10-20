@@ -5,15 +5,14 @@ import numpy as np
 import random
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.optim import Adam
 from torch.utils.data import DataLoader
-from pytorchcv.model_provider import get_model
 from PIL import Image
 
 from dataset import CIFAR100
+from ensemble import Ensemble
+from algorithms import FGSM, PGD, Optimization
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '2'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -34,14 +33,14 @@ def set_seed(seed):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, default="../data/cifar-100_eval")
-    parser.add_argument("--out_dir", type=str, default="./out")
+    parser.add_argument("--out_dir", type=str, default="./adv_images")
+    parser.add_argument("--algor", type=str, required=True, choices=["fgsm", "pgd", "opt"])
     parser.add_argument("--model_names", nargs='+',
-                        default=["resnet56_cifar100", "resnet110_cifar100", 
-                                "resnet164bn_cifar100", "densenet100_k24_cifar100"])
+                        default=["resnet110_cifar100", "resnet164bn_cifar100"])
     parser.add_argument("--epsilon", type=float, default=8)
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--max_iter", type=int, default=1000)
+    parser.add_argument("--lr", type=float, default=1e-1)
+    parser.add_argument("--max_iter", type=int, default=100)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--seed", type=int, default=14)
     args = parser.parse_args()
@@ -50,43 +49,36 @@ if __name__ == "__main__":
     set_seed(args.seed)
 
     logger.info("Loading data...")
-    dataloader = DataLoader(dataset=CIFAR100(args), \
+    dataloader = DataLoader(dataset=CIFAR100(args.data_dir), \
                             batch_size=args.batch_size, \
                             shuffle=False, \
                             num_workers=4)
 
     logger.info("Loading proxy models...")
-    models = []
-    for model_name in args.model_names:
-        model = get_model(model_name, pretrained=True).to(args.device)
-        model.eval()
-        models.append(model)
+    ensemble_model = Ensemble(args).to(args.device)
+    ensemble_model.eval()
     
     means = torch.Tensor(dataloader.dataset.mean).reshape(1, 3, 1, 1).to(args.device)
     stds = torch.Tensor(dataloader.dataset.std).reshape(1, 3, 1, 1).to(args.device)
     epsilons = args.epsilon / (255 * stds)
     for images, labels, ori_images, names in dataloader:
-        modifiers = torch.zeros_like(images, requires_grad=True, device=args.device)
-        optimizer = Adam([modifiers], lr=args.lr)
         images = images.to(args.device)
-        labels_oh = F.one_hot(labels, num_classes=100).to(args.device)
+        labels = labels.to(args.device)
+        if args.algor == "fgsm":
+            modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), epsilons)
+        elif args.algor == "pgd":
+            modifiers = PGD(ensemble_model, images, labels, nn.CrossEntropyLoss(), 
+                            args.lr, args.max_iter, epsilons)
+        elif args.algor == "opt":
+            modifiers = Optimization(ensemble_model, images, labels, \
+                                    args.lr, args.max_iter, epsilons)
+        else:
+            raise NotImplementedError
         
-        for it in range(args.max_iter):
-            adv_images = images + modifiers.clamp(-epsilons, epsilons)
-            preds = torch.zeros_like(labels_oh).float()
-            for model in models:
-                preds += model(adv_images).softmax(-1)
-            preds = preds / len(models)
-            #preds = model(adv_images).softmax(-1)
-            losses = -torch.log(1 - labels_oh * preds).sum(-1)
-
-            optimizer.zero_grad()
-            losses.backward(torch.ones_like(losses), retain_graph=True)
-            optimizer.step()
-        
-        adv_images = images + modifiers.clamp(-epsilons, epsilons)
-        for model in models:
-            print((model(adv_images).argmax(-1).cpu() == labels).float().mean())
+        adv_images = images + modifiers
+        preds = ensemble_model(adv_images, reduction="none")
+        for i in range(preds.shape[0]):
+            print((preds[i].argmax(-1) == labels).float().mean())
         print('')
         
         ori_images = ori_images.numpy()

@@ -7,11 +7,11 @@ from torchvision.transforms import transforms
 
 
 class CIFAR100(Dataset):
-    def __init__(self, args):
+    def __init__(self, data_dir):
         self.images = []
         self.labels = []
         self.names = []
-        for f_name in sorted(glob.glob("{}/*".format(args.data_dir))):
+        for f_name in sorted(glob.glob("{}/*".format(data_dir))):
             self.images.append(Image.open(f_name))
             name = os.path.basename(f_name)
             self.labels.append(int(name.split('_')[0]))
