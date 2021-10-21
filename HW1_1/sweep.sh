@@ -13,7 +13,7 @@ for model_name in resnet20_cifar100 resnet56_cifar100 \
 					pyramidnet110_a48_cifar100 pyramidnet110_a84_cifar100 \
 					pyramidnet236_a220_bn_cifar100 pyramidnet272_a200_bn_cifar100 \
 					wrn28_10_cifar100 wrn40_8_cifar100 \
-					nin_cifar100:
+					nin_cifar100
 do
 	echo -e "\nMODEL: "$model_name
 	python generate.py --algor ifgsm --model_names $model_name

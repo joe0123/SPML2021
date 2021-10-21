@@ -38,8 +38,8 @@ def validate(ori_dataset, adv_dataset, epsilon):
     
     for i in range(len(adv_dataset)):
         _, _, adv_image, adv_name = adv_dataset[i]
-        ori_image = np.array(ori_map[adv_name])
-        adv_image = np.array(adv_image)
+        ori_image = np.array(ori_map[adv_name]).astype(np.int8)
+        adv_image = np.array(adv_image).astype(np.int8)
         if np.abs(ori_image - adv_image).max() > epsilon:
             print("Result: FAIL! Please generate images with proper epsilon.")
             exit()
@@ -50,7 +50,7 @@ def validate(ori_dataset, adv_dataset, epsilon):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ori_dir", type=str, default="./adv_images")
+    parser.add_argument("--ori_dir", type=str, default="../data/cifar-100_eval/")
     parser.add_argument("--adv_dir", type=str, default="./adv_images")
     parser.add_argument("--model_names", nargs='+',
                         default=["resnet20_cifar100", "resnet56_cifar100", 
