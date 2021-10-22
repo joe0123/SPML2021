@@ -1,3 +1,5 @@
+export CUDA_VISIBLE_DEVICES='2'
+:<<BLOCK
 for model_name in resnet20_cifar100 resnet56_cifar100 \
 					resnet110_cifar100 resnet164bn_cifar100 \
 					resnet272bn_cifar100 resnet1001_cifar100 \
@@ -14,8 +16,10 @@ for model_name in resnet20_cifar100 resnet56_cifar100 \
 					pyramidnet236_a220_bn_cifar100 pyramidnet272_a200_bn_cifar100 \
 					wrn28_10_cifar100 wrn40_8_cifar100 \
 					nin_cifar100
+BLOCK
+for model_name in sepreresnet20_cifar100 sepreresnet56_cifar100 sepreresnet110_cifar100 sepreresnet164bn_cifar100 sepreresnet272bn_cifar100 sepreresnet542bn_cifar100 
 do
 	echo -e "\nMODEL: "$model_name
-	python generate.py --algor ifgsm --model_names $model_name
-	python evaluate.py
+	python generate.py --algor opt --model_names $model_name --out_dir tmp_
+	python evaluate.py --adv_dir tmp_ --model_names sepreresnet20_cifar100 sepreresnet56_cifar100 sepreresnet110_cifar100 sepreresnet164bn_cifar100 sepreresnet272bn_cifar100 sepreresnet542bn_cifar100 
 done

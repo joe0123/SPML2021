@@ -8,8 +8,8 @@ from torch.utils.data import DataLoader
 from pytorchcv.model_provider import get_model
 
 from dataset import CIFAR100
+from model import get_cifar_model
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -53,7 +53,8 @@ if __name__ == "__main__":
     parser.add_argument("--ori_dir", type=str, default="../data/cifar-100_eval/")
     parser.add_argument("--adv_dir", type=str, default="./adv_images")
     parser.add_argument("--model_names", nargs='+',
-                        default=["resnet20_cifar100", "resnet56_cifar100", 
+                        default=["vgg16", "googlenet", "mobilenetv2", "seresnet50",
+                                "resnet20_cifar100", "resnet56_cifar100", 
                                 "resnet110_cifar100", "resnet164bn_cifar100", 
                                 "resnet272bn_cifar100", "resnet1001_cifar100",
                                 "preresnet20_cifar100", "preresnet56_cifar100", 
@@ -68,7 +69,11 @@ if __name__ == "__main__":
                                 "pyramidnet110_a48_cifar100", "pyramidnet110_a84_cifar100",
                                 "pyramidnet236_a220_bn_cifar100", "pyramidnet272_a200_bn_cifar100",
                                 "wrn28_10_cifar100", "wrn40_8_cifar100",
-                                "nin_cifar100",
+                                "nin_cifar100", "ror3_164_cifar100",
+                                "sepreresnet110_cifar100", 
+                                "resnext29_32x4d_cifar100", "resnext272_2x32d_cifar100",
+                                "rir_cifar100", "xdensenet40_2_k36_bc_cifar100",
+                                "shakeshakeresnet26_2x32d_cifar100", "diaresnet110_cifar100",
                                 ])
     parser.add_argument("--epsilon", type=int, default=8)
     parser.add_argument("--batch_size", type=int, default=16)
@@ -88,7 +93,11 @@ if __name__ == "__main__":
 
     for model_name in args.model_names:
         logger.info("Loading proxy model {}...".format(model_name))
-        model = get_model(model_name, pretrained=True).to(args.device)
+        if model_name.endswith("cifar100"):
+            model = get_model(model_name, pretrained=True)
+        else:
+            model = get_cifar_model(model_name)
+        model = model.to(args.device)
         model.eval()
         
         logger.info("Evaluating...")
