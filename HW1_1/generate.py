@@ -37,15 +37,11 @@ if __name__ == "__main__":
     parser.add_argument("--model_names", nargs='+',
                         default=["vgg16", "googlenet", 
                                 "resnet20_cifar100", "resnet1001_cifar100",
-                                #"resnet110_cifar100", "resnet1001_cifar100",
-                                "sepreresnet110_cifar100", "sepreresnet542bn_cifar100",
-                                #"preresnet20_cifar100", "preresnet1001_cifar100",
-                                #"seresnet20_cifar100", "seresnet272bn_cifar100",
-                                #"seresnet110_cifar100", "seresnet272bn_cifar100",
-                                #"densenet40_k12_cifar100", "densenet250_k24_bc_cifar100",
-                                "densenet100_k24_cifar100", "densenet250_k24_bc_cifar100",
+                                "preresnet20_cifar100", "preresnet1001_cifar100",
+                                "seresnet20_cifar100", "seresnet272bn_cifar100",
+                                "densenet40_k12_cifar100", "densenet250_k24_bc_cifar100",
                                 "pyramidnet110_a84_cifar100", "pyramidnet272_a200_bn_cifar100",
-                                "resnext29_32x4d_cifar100","wrn28_10_cifar100", 
+                                "resnext29_32x4d_cifar100", "wrn28_10_cifar100", 
                                 "nin_cifar100", "ror3_164_cifar100"])
     parser.add_argument("--epsilon", type=float, default=8)
     parser.add_argument("--batch_size", type=int, default=16)
@@ -53,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=14)
     args = parser.parse_args()
 
-    os.makedirs(args.out_dir, exist_ok=True)
+    os.makedirs(args.out_dir)
     set_seed(args.seed)
 
     logger.info("Loading data...")

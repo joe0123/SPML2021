@@ -13,20 +13,20 @@ class Ensemble(nn.Module):
                 model = get_cifar_model(model_name)
             self.add_module(model_name, model)
 
-    def forward(self, x, reduction="mean"):   # Return probability
-        probs = []
+    def forward(self, x, reduction="mean"):   # Return logits
+        logits = []
         for model in self.children():
-            probs.append(model(x).softmax(-1))
+            logits.append(model(x))
         
-        probs = torch.stack(probs, dim=0)
+        logits = torch.stack(logits, dim=0)
         if reduction == "mean":
-            probs = probs.mean(0)
+            logits = logits.mean(0)
         elif reduction == "sum":
-            probs = probs.sum(0)
+            logits = logits.sum(0)
         elif reduction != "none":
             raise NotImplementedError
         
-        return probs
+        return logits
 
 def get_cifar_model(model_name, ckpt_dir="./cifar_ckpts"):
     model = get_network(model_name)

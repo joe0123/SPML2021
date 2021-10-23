@@ -39,7 +39,7 @@ def Optimization(model, x, y, epsilons, lr=1e-1, max_iter=100, num_classes=100):
 
     for it in range(max_iter):
         adv_x = x + modifiers.clamp(-epsilons, epsilons)
-        pred = model(adv_x)
+        pred = model(adv_x).softmax(-1)
         losses = -torch.log(1 - y_oh * pred).sum(-1).mean()
 
         optimizer.zero_grad()
