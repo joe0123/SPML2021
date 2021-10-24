@@ -18,13 +18,6 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-def set_seed(seed):
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.cuda.empty_cache()
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
 
 def validate(ori_dataset, adv_dataset, epsilon):
     if len(ori_dataset) != len(adv_dataset):
