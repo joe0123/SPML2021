@@ -11,6 +11,7 @@ Please create the environment by the following commands, where conda is needed.
 ```
 cd envs/
 bash create.sh
+conda activate spml
 ```
 
 ### Proxy Models
@@ -45,7 +46,7 @@ Note that the position of original CIFAR100 images and the attack algorithm must
 Also, you can assign proxy models to `--model_names` as you want. For [pytorchcv](https://github.com/osmr/imgclsmob/tree/master/pytorch), please find those with suffix `_cifar100` from [model provider list](https://github.com/osmr/imgclsmob/blob/master/pytorch/pytorchcv/model_provider.py). For [Pytorch-cifar100](https://github.com/weiaicunzai/pytorch-cifar100), please train any models you want from *pretrain_cifar/*, and rename the checkpoints to *cifar_ckpts/[model_type].pth*, such as *cifar_ckpts/mobilenetv2.pth* for mobilenetv2. Please refer to the structure mentioned in Preparation.
 
 ```
-python generate.py --data_dir [original CIFAR100 root] --algor [fgsm / ifgsm / opt / pgd]
+python generate.py --data_dir [original CIFAR100 root] --algor [fgsm/ifgsm/opt/pgd]
 ```
 
 ### Evaluate adversarial images
