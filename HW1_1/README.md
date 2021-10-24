@@ -1,4 +1,6 @@
-# SPML2021 HW1-1 Black Box Attack
+# SPML2021 Homework 1 Phase 1
+
+> Black-box attacks on CIFAR-100 datasets
 
 ## Preparations
 
@@ -38,7 +40,7 @@ src/
 
 Please run the following command to generate adversarial images. 
 
-Note that the position of original CIFAR100 images and attack algorithm must be assigned.
+Note that the position of original CIFAR100 images and the attack algorithm must be assigned.
 
 Also, you can assign proxy models to `--model_names` as you want. For [pytorchcv](https://github.com/osmr/imgclsmob/tree/master/pytorch), please find those with suffix `_cifar100` from [model provider list](https://github.com/osmr/imgclsmob/blob/master/pytorch/pytorchcv/model_provider.py). For [Pytorch-cifar100](https://github.com/weiaicunzai/pytorch-cifar100), please train any models you want from *pretrain_cifar/*, and rename the checkpoints to *cifar_ckpts/[model_type].pth*, such as *cifar_ckpts/mobilenetv2.pth* for mobilenetv2. Please refer to the structure mentioned in Preparation.
 
@@ -48,7 +50,7 @@ python generate.py --data_dir [original CIFAR100 root] --algor [fgsm / ifgsm / o
 
 ### Evaluate adversarial images
 
-Please run the following command to evaluate adversarial images after generating the adversarial images.
+Please run the following command to evaluate adversarial images after generating adversarial images.
 
 Note that the position of original CIFAR100 images must be assigned, and you might need to assign argument `--adv_dir` for the position of adversarial CIFAR100 images if you change `--out_dir` when generating images.
 
