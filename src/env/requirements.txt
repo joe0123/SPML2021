@@ -1,0 +1,2 @@
+pytorchcv==0.0.67
+tensorboard
