@@ -43,6 +43,7 @@ if __name__ == "__main__":
                                 "pyramidnet110_a84_cifar100", "pyramidnet272_a200_bn_cifar100",
                                 "resnext29_32x4d_cifar100", "wrn28_10_cifar100", 
                                 "nin_cifar100", "ror3_164_cifar100"])
+    parser.add_argument("--defense", type=str, choices=["jpeg", "spatial"])
     parser.add_argument("--max_iter", type=int, default=20)
     parser.add_argument("--lr", type=float, default=0.2)
     parser.add_argument("--epsilon", type=float, default=8)
@@ -65,33 +66,29 @@ if __name__ == "__main__":
     ensemble_model.eval()
     
     logger.info("Generating adversarial images...")
-    epsilon = args.epsilon / 255
+    epsilon = args.epsilon / 255.
     for i, (images, labels, ori_images, names) in enumerate(dataloader):
         #print(i, flush=True)
         images = images.to(args.device)
         labels = labels.to(args.device)
         if args.algor == "fgsm":
-            modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), epsilon, max_iter=1)
+            modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
+                            epsilon, max_iter=1, defense=args.defense)
         elif args.algor == "ifgsm":
             modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
-                            epsilon, lr=args.lr, max_iter=args.max_iter)
+                            epsilon, lr=args.lr, max_iter=args.max_iter, defense=args.defense)
         elif args.algor == "pgd":
             modifiers = PGD(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
-                            epsilon, lr=args.lr, max_iter=args.max_iter)
+                            epsilon, lr=args.lr, max_iter=args.max_iter, defense=args.defense)
         elif args.algor == "opt":
             modifiers = Optimization(ensemble_model, images, labels, \
-                            epsilon, lr=args.lr, max_iter=args.max_iter)
+                            epsilon, lr=args.lr, max_iter=args.max_iter, defense=args.defense)
         else:
             raise NotImplementedError
         
-        #adv_images = images + modifiers
-        #preds = ensemble_model(adv_images, reduction="none")
-        #for i in range(preds.shape[0]):
-        #    print((preds[i].argmax(-1) == labels).float().mean())
-        #print('')
-        
+                
         ori_images = ori_images.numpy()
-        noises = (modifiers.detach() * 255).clamp(-args.epsilon, args.epsilon)
+        noises = (modifiers.detach() * 255.).clamp(-args.epsilon, args.epsilon)
         noises = noises.cpu().numpy().transpose((0, 2, 3, 1)) # (b, C, H, W) -> (b, H, W, C)
         adv_images = np.floor(ori_images + noises).clip(0, 255)     
         for adv_image, name in zip(adv_images, names):

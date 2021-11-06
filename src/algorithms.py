@@ -2,12 +2,15 @@ import torch
 from torch.optim import Adam
 import torch.nn.functional as F
 
+from model import pre_defense
 
-def FGSM(model, x, y, loss_fn, epsilon, lr=1, max_iter=100):
+def FGSM(model, x, y, loss_fn, epsilon, lr=1, max_iter=100, defense=None):
     modifiers = torch.zeros_like(x, device=x.device)
     
     for it in range(max_iter):
         adv_x = x + modifiers
+        adv_x = adv_x.clamp(0, 1)
+        adv_x = pre_defense(adv_x.cpu(), defense).to(adv_x.device)
         adv_x.requires_grad = True
         loss = loss_fn(model(adv_x), y)
         loss.backward()
@@ -17,11 +20,13 @@ def FGSM(model, x, y, loss_fn, epsilon, lr=1, max_iter=100):
     
     return modifiers
 
-def PGD(model, x, y, loss_fn, epsilon, lr=1, max_iter=100):
+def PGD(model, x, y, loss_fn, epsilon, lr=1, max_iter=100, defense=None):
     modifiers = torch.zeros_like(x, device=x.device)
     
     for it in range(max_iter):
         adv_x = x + modifiers
+        adv_x = adv_x.clamp(0, 1)
+        adv_x = pre_defense(adv_x.cpu(), defense).to(adv_x.device)
         adv_x.requires_grad = True
         loss = loss_fn(model(adv_x), y)
         loss.backward()
@@ -31,9 +36,12 @@ def PGD(model, x, y, loss_fn, epsilon, lr=1, max_iter=100):
     
     return modifiers
 
-def Optimization(model, x, y, epsilon, lr=1e-1, max_iter=100, num_classes=100):
+def Optimization(model, x, y, epsilon, lr=1, max_iter=100, num_classes=100, defense=None):
+    if defense is not None:
+        raise NotImplementedError
+
     modifiers = torch.zeros_like(x, requires_grad=True, device=x.device)
-    optimizer = Adam([modifiers], lr=lr)
+    optimizer = Adam([modifiers], lr=lr * epsilon)
     y_oh = F.one_hot(y, num_classes=num_classes).to(y.device)
 
     for it in range(max_iter):

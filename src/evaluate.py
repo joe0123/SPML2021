@@ -1,6 +1,7 @@
 import os
 import argparse
 import logging
+import warnings
 import numpy as np
 import random
 import torch
@@ -8,7 +9,8 @@ from torch.utils.data import DataLoader
 from pytorchcv.model_provider import get_model
 
 from dataset import CIFAR100
-from model import DefenseModel, get_cifar_model
+from model import get_cifar_model, CIFAR100Model, pre_defense
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -17,6 +19,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
+warnings.filterwarnings("ignore")
 
 def validate(ori_dataset, adv_dataset, epsilon):
     if len(ori_dataset) != len(adv_dataset):
@@ -69,6 +72,7 @@ if __name__ == "__main__":
                                 "rir_cifar100", "xdensenet40_2_k36_bc_cifar100",
                                 "shakeshakeresnet26_2x32d_cifar100", "diaresnet110_cifar100",
                                 ])
+    parser.add_argument("--defense", type=str, choices=["jpeg", "spatial"])
     parser.add_argument("--epsilon", type=int, default=8)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--device", type=str, default="cuda:0")
@@ -84,7 +88,7 @@ if __name__ == "__main__":
 
     logger.info("Validating data with epsilon {}...".format(args.epsilon))
     validate(ori_dataset, adv_dataset, args.epsilon)
-
+    
     for model_name in args.model_names:
         logger.info("Loading proxy model {}...".format(model_name))
         if model_name.endswith("cifar100"):
@@ -93,12 +97,13 @@ if __name__ == "__main__":
             model = torch.hub.load("chenyaofo/pytorch-cifar-models", model_name, pretrained=True)
         else:
             model = get_cifar_model(model_name)
-        model = DefenseModel(model).to(args.device)
+        model = CIFAR100Model(model).to(args.device)
         model.eval()
-        
+
         logger.info("Evaluating...")
         correct_count = 0
         for images, labels, _, _ in adv_dataloader:
+            images = pre_defense(images, args.defense)
             images = images.to(args.device)
             preds = model(images)
             correct_count += (preds.argmax(-1).cpu() == labels).sum().item()

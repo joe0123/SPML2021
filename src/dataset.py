@@ -6,6 +6,15 @@ from io import BytesIO
 import numpy as np
 from torchvision.transforms import transforms
 
+class JpegCompression():
+    def __init__(self, quality=80):
+        self._quality = quality
+
+    def __call__(self, img: Image.Image) -> Image.Image:
+        with BytesIO() as f:
+            img.save(f, format='JPEG', quality=self._quality)
+            img = Image.open(f).convert('RGB')
+        return img
 
 class CIFAR100(Dataset):
     def __init__(self, data_dir):
@@ -19,10 +28,12 @@ class CIFAR100(Dataset):
             self.names.append(name)
         
         self.transform = transforms.ToTensor()
-
+        #self.transform = transforms.Compose([JpegCompression(),
+        #                                    transforms.ToTensor()])
+    
     def __getitem__(self, idx):
         pil_image = np.array(self.images[idx])
-        image = self.transform(self.images[idx])    # From PIL to Tensor (0-1 scale)
+        image = self.transform(self.images[idx])
         label = self.labels[idx]
         name = self.names[idx]
         return image, label, pil_image, name
