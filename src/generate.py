@@ -65,24 +65,22 @@ if __name__ == "__main__":
     ensemble_model.eval()
     
     logger.info("Generating adversarial images...")
-    means = torch.Tensor(dataloader.dataset.mean).reshape(1, 3, 1, 1).to(args.device)
-    stds = torch.Tensor(dataloader.dataset.std).reshape(1, 3, 1, 1).to(args.device)
-    epsilons = args.epsilon / (255 * stds)
+    epsilon = args.epsilon / 255
     for i, (images, labels, ori_images, names) in enumerate(dataloader):
         #print(i, flush=True)
         images = images.to(args.device)
         labels = labels.to(args.device)
         if args.algor == "fgsm":
-            modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), epsilons, max_iter=1)
+            modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), epsilon, max_iter=1)
         elif args.algor == "ifgsm":
             modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
-                            epsilons, lr=args.lr, max_iter=args.max_iter)
+                            epsilon, lr=args.lr, max_iter=args.max_iter)
         elif args.algor == "pgd":
             modifiers = PGD(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
-                            epsilons, lr=args.lr, max_iter=args.max_iter)
+                            epsilon, lr=args.lr, max_iter=args.max_iter)
         elif args.algor == "opt":
             modifiers = Optimization(ensemble_model, images, labels, \
-                            epsilons, lr=args.lr, max_iter=args.max_iter)
+                            epsilon, lr=args.lr, max_iter=args.max_iter)
         else:
             raise NotImplementedError
         
@@ -93,7 +91,7 @@ if __name__ == "__main__":
         #print('')
         
         ori_images = ori_images.numpy()
-        noises = (modifiers.detach() * stds * 255).clamp(-args.epsilon, args.epsilon)
+        noises = (modifiers.detach() * 255).clamp(-args.epsilon, args.epsilon)
         noises = noises.cpu().numpy().transpose((0, 2, 3, 1)) # (b, C, H, W) -> (b, H, W, C)
         adv_images = np.floor(ori_images + noises).clip(0, 255)     
         for adv_image, name in zip(adv_images, names):

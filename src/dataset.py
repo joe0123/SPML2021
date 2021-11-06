@@ -18,14 +18,11 @@ class CIFAR100(Dataset):
             self.labels.append(int(name.split('_')[0]))
             self.names.append(name)
         
-        self.mean = (0.5071, 0.4867, 0.4408)
-        self.std = (0.2675, 0.2565, 0.2761)
-        self.transform = transforms.Compose([transforms.ToTensor(),
-                                            transforms.Normalize(self.mean, self.std)])
-    
+        self.transform = transforms.ToTensor()
+
     def __getitem__(self, idx):
         pil_image = np.array(self.images[idx])
-        image = self.transform(self.images[idx])
+        image = self.transform(self.images[idx])    # From PIL to Tensor (0-1 scale)
         label = self.labels[idx]
         name = self.names[idx]
         return image, label, pil_image, name

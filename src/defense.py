@@ -9,16 +9,17 @@ from PIL import ImageFilter as IF
 from torchvision import transforms as T
 
 
-def build_transform(transform):
+def build_defense(transform):
     return {
         "Gaussian": GaussianBlur,
+        "JPEG-90": partial(JpegCompression, quality=90),
         "JPEG-80": partial(JpegCompression, quality=80),
         "JPEG-60": partial(JpegCompression, quality=60),
     }[transform]()
 
 
-def build_transforms(transforms: List[str]):
-    return T.Compose([build_transform(t) for t in transforms])
+def build_defenses(transforms: List[str]):
+    return T.Compose([build_defense(t) for t in transforms])
 
 
 class GaussianBlur():

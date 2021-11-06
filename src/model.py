@@ -1,15 +1,22 @@
 import os
 import torch
 import torch.nn as nn
+from torchvision.transforms import transforms
 from pytorchcv.model_provider import get_model
+
 
 class DefenseModel(nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
-        #self.transform = transform # TODO
+        cifar100_mean = (0.5071, 0.4867, 0.4408)
+        cifar100_std = (0.2675, 0.2565, 0.2761)
+        self.transform = transforms.Compose([transforms.ToPILImage(),
+                                            transforms.ToTensor(),
+                                            transforms.Normalize(cifar100_mean, cifar100_std)])
 
     def forward(self, x):
+        x = torch.stack([self.transform(x_) for x_ in x], dim=0).to(x.device)
         return self.model(x)
 
 

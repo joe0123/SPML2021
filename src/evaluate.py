@@ -8,8 +8,7 @@ from torch.utils.data import DataLoader
 from pytorchcv.model_provider import get_model
 
 from dataset import CIFAR100
-from model import get_cifar_model
-
+from model import DefenseModel, get_cifar_model
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -94,7 +93,7 @@ if __name__ == "__main__":
             model = torch.hub.load("chenyaofo/pytorch-cifar-models", model_name, pretrained=True)
         else:
             model = get_cifar_model(model_name)
-        model = model.to(args.device)
+        model = DefenseModel(model).to(args.device)
         model.eval()
         
         logger.info("Evaluating...")
