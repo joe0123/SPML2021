@@ -16,14 +16,11 @@ class CIFAR100(Dataset):
             name = os.path.basename(f_name)
             self.labels.append(int(name.split('_')[0]))
             self.names.append(name)
-        
-        self.transform = transforms.ToTensor()
-        #self.transform = transforms.Compose([transforms.RandomResizedCrop(size=(32, 32), scale=(0.8, 1)),
-        #                                    transforms.ToTensor()])
+        self.to_tensor = transforms.ToTensor()
     
     def __getitem__(self, idx):
         pil_image = np.array(self.images[idx])
-        image = self.transform(self.images[idx])
+        image = self.to_tensor(self.images[idx])
         label = self.labels[idx]
         name = self.names[idx]
         return image, label, pil_image, name

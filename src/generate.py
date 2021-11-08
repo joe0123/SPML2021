@@ -75,7 +75,7 @@ if __name__ == "__main__":
         labels = labels.to(args.device)
         if args.algor == "fgsm":
             modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
-                            epsilon, max_iter=1, defense=defense)
+                            epsilon, lr=1, max_iter=1, defense=defense)
         elif args.algor == "ifgsm":
             modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
                             epsilon, lr=args.lr, max_iter=args.max_iter, defense=defense)

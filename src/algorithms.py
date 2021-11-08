@@ -30,7 +30,7 @@ def PGD(model, x, y, loss_fn, epsilon, lr=1, max_iter=100, defense=None):
         loss = loss_fn(model(adv_x), y)
         loss.backward()
     
-        modifiers += lr * adv_x.grad.detach()
+        modifiers += lr * epsilon * adv_x.grad.detach()
         modifiers = modifiers.clamp(-epsilon, epsilon)
     
     return modifiers
