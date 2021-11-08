@@ -11,6 +11,7 @@ from PIL import Image
 from dataset import CIFAR100
 from model import Ensemble
 from algorithms import FGSM, PGD, Optimization
+from defense import PreDefense
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ if __name__ == "__main__":
                                 "pyramidnet110_a84_cifar100", "pyramidnet272_a200_bn_cifar100",
                                 "resnext29_32x4d_cifar100", "wrn28_10_cifar100", 
                                 "nin_cifar100", "ror3_164_cifar100"])
-    parser.add_argument("--defense", type=str, choices=["jpeg", "spatial"])
+    parser.add_argument("--defense", type=str, choices=["jpeg", "spatial", "blur"])
     parser.add_argument("--max_iter", type=int, default=20)
     parser.add_argument("--lr", type=float, default=0.2)
     parser.add_argument("--epsilon", type=float, default=8)
@@ -67,22 +68,23 @@ if __name__ == "__main__":
     
     logger.info("Generating adversarial images...")
     epsilon = args.epsilon / 255.
+    defense = PreDefense(args.defense)
     for i, (images, labels, ori_images, names) in enumerate(dataloader):
         #print(i, flush=True)
         images = images.to(args.device)
         labels = labels.to(args.device)
         if args.algor == "fgsm":
             modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
-                            epsilon, max_iter=1, defense=args.defense)
+                            epsilon, max_iter=1, defense=defense)
         elif args.algor == "ifgsm":
             modifiers = FGSM(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
-                            epsilon, lr=args.lr, max_iter=args.max_iter, defense=args.defense)
+                            epsilon, lr=args.lr, max_iter=args.max_iter, defense=defense)
         elif args.algor == "pgd":
             modifiers = PGD(ensemble_model, images, labels, nn.CrossEntropyLoss(), \
-                            epsilon, lr=args.lr, max_iter=args.max_iter, defense=args.defense)
+                            epsilon, lr=args.lr, max_iter=args.max_iter, defense=defense)
         elif args.algor == "opt":
             modifiers = Optimization(ensemble_model, images, labels, \
-                            epsilon, lr=args.lr, max_iter=args.max_iter, defense=args.defense)
+                            epsilon, lr=args.lr, max_iter=args.max_iter, defense=defense)
         else:
             raise NotImplementedError
         

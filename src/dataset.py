@@ -2,19 +2,9 @@ import os
 import glob
 from torch.utils.data import Dataset
 from PIL import Image
-from io import BytesIO
 import numpy as np
 from torchvision.transforms import transforms
 
-class JpegCompression():
-    def __init__(self, quality=80):
-        self._quality = quality
-
-    def __call__(self, img: Image.Image) -> Image.Image:
-        with BytesIO() as f:
-            img.save(f, format='JPEG', quality=self._quality)
-            img = Image.open(f).convert('RGB')
-        return img
 
 class CIFAR100(Dataset):
     def __init__(self, data_dir):
@@ -28,7 +18,7 @@ class CIFAR100(Dataset):
             self.names.append(name)
         
         self.transform = transforms.ToTensor()
-        #self.transform = transforms.Compose([JpegCompression(),
+        #self.transform = transforms.Compose([transforms.RandomResizedCrop(size=(32, 32), scale=(0.8, 1)),
         #                                    transforms.ToTensor()])
     
     def __getitem__(self, idx):

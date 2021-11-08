@@ -9,7 +9,8 @@ from torch.utils.data import DataLoader
 from pytorchcv.model_provider import get_model
 
 from dataset import CIFAR100
-from model import get_cifar_model, CIFAR100Model, pre_defense
+from model import get_cifar_model, CIFAR100Model
+from defense import PreDefense
 
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ def validate(ori_dataset, adv_dataset, epsilon):
         _, _, adv_image, adv_name = adv_dataset[i]
         ori_image = np.array(ori_map[adv_name]).astype(np.int8)
         adv_image = np.array(adv_image).astype(np.int8)
+        #print((ori_image - adv_image).min(), (ori_image - adv_image).max())
         if np.abs(ori_image - adv_image).max() > epsilon:
             print("Result: FAIL! Please generate images with proper epsilon.")
             exit()
@@ -48,7 +50,13 @@ if __name__ == "__main__":
     parser.add_argument("--ori_dir", type=str, default="../data/cifar-100_eval/")
     parser.add_argument("--adv_dir", type=str, default="./adv_images")
     parser.add_argument("--model_names", nargs='+',
-                        default=["vgg16", "googlenet", "mobilenetv2", "seresnet50",
+                        default=["vgg16", "googlenet", "mobilenetv2", "seresnet50", "nasnet",
+                                "stochasticdepth34", "xception", "inceptionv4",
+                                "cifar100_resnet32", "cifar100_vgg16_bn",
+                                "cifar100_mobilenetv2_x1_0", "cifar100_shufflenetv2_x1_5", 
+                                "cifar100_resnet56", "cifar100_vgg19_bn",
+                                "cifar100_mobilenetv2_x1_4", "cifar100_shufflenetv2_x2_0", 
+                                "cifar100_repvgg_a2",
                                 "resnet20_cifar100", "resnet56_cifar100", 
                                 "resnet110_cifar100", "resnet164bn_cifar100", 
                                 "resnet272bn_cifar100", "resnet1001_cifar100",
@@ -72,7 +80,7 @@ if __name__ == "__main__":
                                 "rir_cifar100", "xdensenet40_2_k36_bc_cifar100",
                                 "shakeshakeresnet26_2x32d_cifar100", "diaresnet110_cifar100",
                                 ])
-    parser.add_argument("--defense", type=str, choices=["jpeg", "spatial"])
+    parser.add_argument("--defense", type=str, choices=["jpeg", "spatial", "blur"])
     parser.add_argument("--epsilon", type=int, default=8)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--device", type=str, default="cuda:0")
@@ -89,6 +97,7 @@ if __name__ == "__main__":
     logger.info("Validating data with epsilon {}...".format(args.epsilon))
     validate(ori_dataset, adv_dataset, args.epsilon)
     
+    defense = PreDefense(args.defense)
     for model_name in args.model_names:
         logger.info("Loading proxy model {}...".format(model_name))
         if model_name.endswith("cifar100"):
@@ -103,7 +112,7 @@ if __name__ == "__main__":
         logger.info("Evaluating...")
         correct_count = 0
         for images, labels, _, _ in adv_dataloader:
-            images = pre_defense(images, args.defense)
+            images = defense(images)
             images = images.to(args.device)
             preds = model(images)
             correct_count += (preds.argmax(-1).cpu() == labels).sum().item()

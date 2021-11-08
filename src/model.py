@@ -3,22 +3,6 @@ import torch
 import torch.nn as nn
 from torchvision.transforms import transforms
 from pytorchcv.model_provider import get_model
-from art.defences.preprocessor import JpegCompression, SpatialSmoothingPyTorch
-
-
-def pre_defense(x, defense):
-    if defense is None:
-        return x
-
-    if defense == "jpeg":
-        func = JpegCompression(quality=80, clip_values=(0, 1), channels_first=True)
-    elif defense == "spatial":
-        func = SpatialSmoothingPyTorch(window_size=2, clip_values=(0, 1), channels_first=True)
-    else:
-        raise NotImplementedError
-
-    return torch.from_numpy(func(x)[0])
-
 
 class CIFAR100Model(nn.Module):
     def __init__(self, model):
@@ -41,6 +25,8 @@ class Ensemble(nn.Module):
         for model_name in args.model_names:
             if model_name.endswith("cifar100"):
                 model = get_model(model_name, pretrained=True)
+            elif model_name.startswith("cifar100"):
+                model = torch.hub.load("chenyaofo/pytorch-cifar-models", model_name, pretrained=True)
             else:
                 model = get_cifar_model(model_name)
             self.add_module(model_name, CIFAR100Model(model))

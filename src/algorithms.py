@@ -2,7 +2,6 @@ import torch
 from torch.optim import Adam
 import torch.nn.functional as F
 
-from model import pre_defense
 
 def FGSM(model, x, y, loss_fn, epsilon, lr=1, max_iter=100, defense=None):
     modifiers = torch.zeros_like(x, device=x.device)
@@ -10,7 +9,7 @@ def FGSM(model, x, y, loss_fn, epsilon, lr=1, max_iter=100, defense=None):
     for it in range(max_iter):
         adv_x = x + modifiers
         adv_x = adv_x.clamp(0, 1)
-        adv_x = pre_defense(adv_x.cpu(), defense).to(adv_x.device)
+        adv_x = defense(adv_x.cpu()).to(adv_x.device)
         adv_x.requires_grad = True
         loss = loss_fn(model(adv_x), y)
         loss.backward()
@@ -26,7 +25,7 @@ def PGD(model, x, y, loss_fn, epsilon, lr=1, max_iter=100, defense=None):
     for it in range(max_iter):
         adv_x = x + modifiers
         adv_x = adv_x.clamp(0, 1)
-        adv_x = pre_defense(adv_x.cpu(), defense).to(adv_x.device)
+        adv_x = defense(adv_x.cpu()).to(adv_x.device)
         adv_x.requires_grad = True
         loss = loss_fn(model(adv_x), y)
         loss.backward()
