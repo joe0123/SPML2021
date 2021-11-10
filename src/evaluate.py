@@ -100,13 +100,7 @@ if __name__ == "__main__":
     defense = PreDefense(args.defense)
     for model_name in args.model_names:
         logger.info("Loading proxy model {}...".format(model_name))
-        if model_name.endswith("cifar100"):
-            model = get_model(model_name, pretrained=True)
-        elif model_name.startswith("cifar100"):
-            model = torch.hub.load("chenyaofo/pytorch-cifar-models", model_name, pretrained=True)
-        else:
-            model = get_cifar_model(model_name)
-        model = CIFAR100Model(model).to(args.device)
+        model = CIFAR100Model(model_name).to(args.device)
         model.eval()
 
         logger.info("Evaluating...")

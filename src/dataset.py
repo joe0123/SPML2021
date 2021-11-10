@@ -5,7 +5,6 @@ from PIL import Image
 import numpy as np
 from torchvision.transforms import transforms
 
-
 class CIFAR100(Dataset):
     def __init__(self, data_dir):
         self.images = []

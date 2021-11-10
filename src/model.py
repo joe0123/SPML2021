@@ -5,9 +5,14 @@ from torchvision.transforms import transforms
 from pytorchcv.model_provider import get_model
 
 class CIFAR100Model(nn.Module):
-    def __init__(self, model):
+    def __init__(self, model_name):
         super().__init__()
-        self.model = model
+        if model_name.endswith("cifar100"):
+            self.model = get_model(model_name, pretrained=True)
+        elif model_name.startswith("cifar100"):
+            self.model = torch.hub.load("chenyaofo/pytorch-cifar-models", model_name, pretrained=True)
+        else:
+            self.model = get_cifar_model(model_name)
 
         cifar100_mean = (0.5071, 0.4867, 0.4408)
         cifar100_std = (0.2675, 0.2565, 0.2761)
@@ -22,14 +27,8 @@ class Ensemble(nn.Module):
     def __init__(self, args):
         super().__init__()
 
-        for model_name in args.model_names:
-            if model_name.endswith("cifar100"):
-                model = get_model(model_name, pretrained=True)
-            elif model_name.startswith("cifar100"):
-                model = torch.hub.load("chenyaofo/pytorch-cifar-models", model_name, pretrained=True)
-            else:
-                model = get_cifar_model(model_name)
-            self.add_module(model_name, CIFAR100Model(model))
+        for model_name in args.model_names: 
+            self.add_module(model_name, CIFAR100Model(model_name))
 
     def forward(self, x, reduction="mean"):   # Return logits
         logits = []

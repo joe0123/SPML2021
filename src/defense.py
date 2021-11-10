@@ -23,7 +23,6 @@ class PreDefense():
         else:
             return torch.from_numpy(self.defense(x.numpy())[0])
 
-
 class GaussianBlur():
     def __init__(self, r=1, clip_values=(0, 1), channels_first=False):
         self.filter = IF.GaussianBlur(r)
@@ -45,7 +44,9 @@ class GaussianBlur():
             blurred_img = img.filter(self.filter)
             blurred_imgs.append(np.array(blurred_img))
         blurred_imgs = np.stack(blurred_imgs, axis=0).astype(imgs.dtype)
-        blurred_imgs = blurred_imgs / 255.
+        
+        if self.clip_values[1] == 1:
+            blurred_imgs = blurred_imgs / 255.
 
         if self.channels_first:
             blurred_imgs = blurred_imgs.transpose((0, 3, 1, 2))
