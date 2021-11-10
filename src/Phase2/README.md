@@ -95,7 +95,7 @@ proxy_models=(
     "cifar100_shufflenetv2_x1_5"
     "cifar100_repvgg_a1"
 )
-python generate.py --data_dir [original CIFAR100 root] --algor ifgsm --model_names ${proxy_models[@]}
+python generate.py --data_dir [original CIFAR100 root] --algor ifgsm --model_names ${proxy_models[@]} --defense blur
 ```
 
 

@@ -13,7 +13,7 @@ class PreDefense():
         elif defense_name == "spatial":
             self.defense = SpatialSmoothingPyTorch(window_size=2, clip_values=(0, 1), channels_first=True)
         elif defense_name == "blur":
-            self.defense = GaussianBlur(r=0.7, clip_values=(0, 1), channels_first=True)
+            self.defense = GaussianBlur(r=0.6, clip_values=(0, 1), channels_first=True)
         else:
             raise NotImplementedError
     
