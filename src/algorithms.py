@@ -36,7 +36,8 @@ def PGD(model, x, y, loss_fn, epsilon, lr=1, max_iter=100, defense=None):
     return modifiers
 
 def Optimization(model, x, y, epsilon, lr=1, max_iter=100, num_classes=100, defense=None):
-    if defense is not None:
+    if defense.defense is not None:
+        print(defense)
         raise NotImplementedError
 
     modifiers = torch.zeros_like(x, requires_grad=True, device=x.device)

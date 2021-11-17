@@ -98,6 +98,7 @@ if __name__ == "__main__":
     validate(ori_dataset, adv_dataset, args.epsilon)
     
     defense = PreDefense(args.defense)
+    accs = []
     for model_name in args.model_names:
         logger.info("Loading proxy model {}...".format(model_name))
         model = CIFAR100Model(model_name).to(args.device)
@@ -112,3 +113,5 @@ if __name__ == "__main__":
             correct_count += (preds.argmax(-1).cpu() == labels).sum().item()
         acc = np.round(correct_count / len(adv_dataloader.dataset), 5)
         print("Accuracy for {}: {}".format(model_name, acc))
+        accs.append(acc)
+    print("Mean: {}\nStd: {}".format(np.mean(accs), np.std(accs)))
