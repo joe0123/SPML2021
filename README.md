@@ -1,4 +1,4 @@
-# Security and Privacy of Machine Learning 2021 at NTU
+# Security and Privacy of Machine Learning 2021
 Homework of [Security and Privacy of Machine Learning 2021 at NTU](https://www.csie.ntu.edu.tw/~stchen/teaching/spml21fall/) (Lectured by Shang-Tse, Chen)
 
 > Black-box and Grey-box attacks on CIFAR-100 datasets
